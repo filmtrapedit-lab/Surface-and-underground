@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design of a Surface Blast — Exam Prep Quiz</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#0d1117;
+  --surface:#141a24;
+  --surface2:#1b2330;
+  --border:#2a3648;
+  --text:#e6ebf5;
+  --text-muted:#7a8699;
+  --correct:#4caf6a;
+  --wrong:#e05555;
+  --radius:10px;
+  --purple:#a05cff;
+  --purple-light:#c9a3ff;
+  --steel:#8d7bb3;
+  --steel-light:#b3a3d6;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+
+body{
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(160,92,255,0.10), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(141,123,179,0.08), transparent 40%),
+    radial-gradient(circle at 50% 90%, rgba(160,92,255,0.06), transparent 50%);
+  color:var(--text);
+  font-family:'DM Sans', sans-serif;
+  line-height:1.5;
+  min-height:100vh;
+  padding:32px 16px 80px;
+}
+
+.wrap{max-width:900px; margin:0 auto;}
+
+/* HEADER */
+header{margin-bottom:28px;}
+.tag{
+  font-family:'DM Mono', monospace;
+  font-size:12px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--purple-light);
+  margin-bottom:8px;
+}
+h1{
+  font-family:'Bebas Neue', sans-serif;
+  font-size:clamp(36px, 7vw, 56px);
+  letter-spacing:1px;
+  line-height:1.05;
+  margin-bottom:10px;
+}
+h1 span{color:var(--purple);}
+.subtitle{
+  color:var(--text-muted);
+  font-size:14.5px;
+  max-width:640px;
+}
+
+/* CONTROLS */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+  margin:24px 0 8px;
+}
+.filters{display:flex; gap:8px; flex-wrap:wrap;}
+.pill{
+  font-family:'DM Mono', monospace;
+  font-size:12.5px;
+  letter-spacing:0.3px;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text-muted);
+  cursor:pointer;
+  transition:all 0.15s ease;
+  user-select:none;
+}
+.pill:hover{border-color:var(--steel); color:var(--text);}
+.pill.active{
+  background:var(--purple);
+  border-color:var(--purple);
+  color:#0d0916;
+  font-weight:600;
+}
+
+.score-badge{
+  margin-left:auto;
+  display:flex;
+  gap:14px;
+  font-family:'DM Mono', monospace;
+  font-size:12.5px;
+  padding:9px 16px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--surface);
+}
+.score-badge b{font-weight:600;}
+.sb-correct{color:var(--correct);}
+.sb-wrong{color:var(--wrong);}
+.sb-answered{color:var(--steel-light);}
+
+/* PROGRESS BAR */
+.progress-track{
+  width:100%;
+  height:6px;
+  background:var(--surface2);
+  border-radius:99px;
+  overflow:hidden;
+  margin:18px 0 30px;
+  border:1px solid var(--border);
+}
+.progress-fill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg, var(--steel), var(--purple));
+  transition:width 0.3s ease;
+}
+
+/* SECTIONS */
+.section{margin-bottom:34px;}
+.section-label{
+  font-family:'Bebas Neue', sans-serif;
+  font-size:22px;
+  letter-spacing:0.5px;
+  color:var(--purple-light);
+  border-bottom:1px solid var(--border);
+  padding-bottom:8px;
+  margin-bottom:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+.section-count{
+  font-family:'DM Mono', monospace;
+  font-size:12px;
+  color:var(--text-muted);
+  letter-spacing:0.5px;
+}
+
+/* CARD */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:3px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  margin-bottom:14px;
+  transition:border-left-color 0.2s ease;
+}
+.card.locked.correct-answer{border-left-color:var(--correct);}
+.card.locked.wrong-answer{border-left-color:var(--wrong);}
+
+.q-meta{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.q-num{
+  font-family:'DM Mono', monospace;
+  font-size:11.5px;
+  color:var(--text-muted);
+  letter-spacing:0.5px;
+}
+.q-type-badge{
+  font-family:'DM Mono', monospace;
+  font-size:10.5px;
+  letter-spacing:0.5px;
+  padding:2px 8px;
+  border-radius:5px;
+  text-transform:uppercase;
+}
+.q-type-badge.mcq{background:rgba(141,123,179,0.18); color:var(--steel-light);}
+.q-type-badge.tf{background:rgba(160,92,255,0.18); color:var(--purple-light);}
+
+.q-text{font-size:15.5px; font-weight:500; margin-bottom:14px; color:var(--text);}
+
+/* MCQ OPTIONS */
+.options{display:flex; flex-direction:column; gap:8px;}
+.opt{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 14px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  cursor:pointer;
+  transition:all 0.12s ease;
+  font-size:14.5px;
+}
+.opt:hover{border-color:var(--steel); background:#212b3a;}
+.opt-letter{
+  font-family:'DM Mono', monospace;
+  font-size:12px;
+  font-weight:600;
+  width:22px;
+  height:22px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--steel-light);
+  flex-shrink:0;
+}
+.card.locked .opt{cursor:default; pointer-events:none;}
+.card.locked .opt.chosen-correct{border-color:var(--correct); background:rgba(76,175,106,0.12);}
+.card.locked .opt.chosen-correct .opt-letter{background:var(--correct); color:#0d0916; border-color:var(--correct);}
+.card.locked .opt.chosen-wrong{border-color:var(--wrong); background:rgba(224,85,85,0.12);}
+.card.locked .opt.chosen-wrong .opt-letter{background:var(--wrong); color:#0d0916; border-color:var(--wrong);}
+.card.locked .opt.reveal-correct{border-color:var(--correct); background:rgba(76,175,106,0.08);}
+
+/* TF BUTTONS */
+.tf-row{display:flex; gap:10px;}
+.tf-btn{
+  flex:1;
+  padding:14px;
+  text-align:center;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  cursor:pointer;
+  font-family:'DM Mono', monospace;
+  font-size:13px;
+  letter-spacing:1px;
+  color:var(--steel-light);
+  transition:all 0.12s ease;
+}
+.tf-btn:hover{border-color:var(--purple); color:var(--text);}
+.card.locked .tf-btn{cursor:default; pointer-events:none;}
+.card.locked .tf-btn.chosen-correct{border-color:var(--correct); background:rgba(76,175,106,0.12); color:var(--correct);}
+.card.locked .tf-btn.chosen-wrong{border-color:var(--wrong); background:rgba(224,85,85,0.12); color:var(--wrong);}
+.card.locked .tf-btn.reveal-correct{border-color:var(--correct); background:rgba(76,175,106,0.08); color:var(--correct);}
+
+/* EXPLANATION */
+.explain{
+  margin-top:14px;
+  padding:12px 14px;
+  background:var(--surface2);
+  border-radius:8px;
+  border:1px solid var(--border);
+  font-size:13.5px;
+  color:var(--text-muted);
+  display:none;
+}
+.card.locked .explain{display:block;}
+.explain b{color:var(--purple-light); font-family:'DM Mono', monospace; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; display:block; margin-bottom:5px;}
+
+/* HIDDEN via filter */
+.card.filtered-out{display:none;}
+
+/* RESET */
+.reset-wrap{
+  text-align:center;
+  margin-top:40px;
+  padding-top:24px;
+  border-top:1px solid var(--border);
+}
+.reset-btn{
+  font-family:'DM Mono', monospace;
+  font-size:12.5px;
+  letter-spacing:0.5px;
+  padding:10px 22px;
+  border-radius:999px;
+  border:1px solid var(--wrong);
+  background:transparent;
+  color:var(--wrong);
+  cursor:pointer;
+  transition:all 0.15s ease;
+}
+.reset-btn:hover{background:var(--wrong); color:#0d0916;}
+
+.footer-note{
+  text-align:center;
+  color:var(--text-muted);
+  font-size:12px;
+  margin-top:16px;
+  font-family:'DM Mono', monospace;
+}
+
+@media (max-width:480px){
+  .score-badge{width:100%; margin-left:0; justify-content:space-between;}
+  .controls{flex-direction:column; align-items:stretch;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">UMaT · Mining Engineering · MN2A Exam Prep</div>
+    <h1>DESIGN OF A <span>SURFACE BLAST</span></h1>
+    <p class="subtitle">120 questions (80 Multiple Choice + 40 True/False) covering blast design fundamentals, bench geometry, burden, spacing, subdrilling, stemming, hole diameter, empirical burden formulas, the KB/KS/KJ/KT/KH ratio system, and worked calculations.</p>
+  </header>
+
+  <div class="controls">
+    <div class="filters">
+      <button class="pill active" data-filter="all">All <span id="count-all"></span></button>
+      <button class="pill" data-filter="mcq">MCQ <span id="count-mcq"></span></button>
+      <button class="pill" data-filter="tf">True / False <span id="count-tf"></span></button>
+    </div>
+    <div class="score-badge">
+      <span class="sb-correct">✓ <b id="sb-correct">0</b></span>
+      <span class="sb-wrong">✗ <b id="sb-wrong">0</b></span>
+      <span class="sb-answered"><b id="sb-answered">0</b>/<span id="sb-total">0</span></span>
+    </div>
+  </div>
+
+  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <div id="quiz-root"></div>
+
+  <div class="reset-wrap">
+    <button class="reset-btn" id="reset-btn">Reset Progress</button>
+    <p class="footer-note">Progress is saved automatically in this browser.</p>
+  </div>
+</div>
+
+<script>
+const QUIZ_DATA = [{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"What is the primary reason blasting is considered far more hazardous than blasthole drilling?","options":["Blasting requires no specialized training unlike drilling","Blasting equipment is more expensive than drilling equipment","Blasting is intricate and highly dangerous, requiring very careful planning to avoid fatalities","Blasting is regulated only by mine management"],"correctIndex":2,"expl":"Drilling is relatively straightforward with little danger, but blasting is intricate and highly dangerous, requiring careful planning of blastholes, explosives, and accessories to avoid fatalities."},{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"Blast outcomes are gauged using several parameters. Which of the following is NOT one of them?","options":["Displacement of the muck pile","Ground vibrations","Fragmentation of the rock mass","Drilling rig fuel consumption"],"correctIndex":3,"expl":"The seven outcome parameters are fragmentation, displacement of muck pile, profile of muck pile, misfires, ground vibrations, flyrock, and airblast — fuel consumption is not among them."},{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"Which of these is classified as an uncontrollable variable in blast design?","options":["Geological discontinuities such as joints and faults","Stemming height","Blasthole diameter","Burden"],"correctIndex":0,"expl":"Uncontrollable variables are rock properties — bedding, dip, strike, faults, joints, discontinuities, ground water, and weather — unlike burden, diameter, and stemming, which are controllable."},{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"In designing a blast, what must the designer do regarding controllable variables?","options":["Maximize powder factor regardless of rock type","Choose apt magnitudes so the outcome parameters fall within a desired range","Ignore uncontrollable variables entirely","Minimize the number of blastholes used"],"correctIndex":1,"expl":"The designer considers all controllable and uncontrollable variables and chooses apt magnitudes of controllable variables so outcome parameters stay within the desired range."},{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"Which of the following is listed as a controllable variable in blast design?","options":["Ground water level","Weather conditions","Rock bedding","Blasthole drilling pattern"],"correctIndex":3,"expl":"Blasthole drilling pattern appears in the controllable parameter table, while ground water, bedding, and weather are uncontrollable."},{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"\"Number of free faces\" and \"size of the blast\" both fall under which category of blast design parameter?","options":["Uncontrollable variables","Controllable variables","Outcome parameters","Geological constraints"],"correctIndex":1,"expl":"Both appear among the controllable variables in the parameter table, alongside explosive/powder factor, burden, and spacing."},{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"What is the stated purpose of this chapter on surface blast design?","options":["To give basic knowledge for designing an efficient blast without causing recognizable hazards","To cover mine equipment maintenance schedules","To explain ore processing techniques","To teach underground mine ventilation"],"correctIndex":0,"expl":"The introduction states the chapter gives basic knowledge for designing a very efficient blast in a surface mine without recognizable hazards to the surroundings."},{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"Which outcome parameter refers to unexploded or partially exploded charges?","options":["Fragmentation","Flyrock","Misfires","Airblast"],"correctIndex":2,"expl":"Misfires is one of the seven outcome parameters used to gauge blast results."},{"type":"mcq","section":"Introduction & Blast Design Fundamentals","q":"Explosive and powder factor selection is an example of which type of blast design variable?","options":["Outcome parameter","Uncontrollable variable","Controllable variable","Environmental hazard"],"correctIndex":2,"expl":"Explosive and powder factor is the first entry in the controllable variables table."},{"type":"tf","section":"Introduction & Blast Design Fundamentals","q":"Blasthole drilling is generally considered more dangerous than the blasting process itself.","answer":false,"expl":"The lecture states the opposite: drilling is relatively straightforward with little danger, while blasting is intricate and highly dangerous."},{"type":"tf","section":"Introduction & Blast Design Fundamentals","q":"Flyrock and airblast are both outcome parameters used to evaluate a blast.","answer":true,"expl":"Both are explicitly listed among the seven outcome parameters."},{"type":"tf","section":"Introduction & Blast Design Fundamentals","q":"Ground water and weather are considered controllable variables in blast design.","answer":false,"expl":"These are uncontrollable variables — properties of the site rather than parameters a designer selects."},{"type":"tf","section":"Introduction & Blast Design Fundamentals","q":"The goal of blast design is to keep outcome parameters within a desired range by selecting apt magnitudes of controllable variables.","answer":true,"expl":"This is stated directly as the objective of the blast designer."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"In the bench blast design diagram, what does \"BH\" represent?","options":["Blasthole height","Backbreak height","Bench height","Burden height"],"correctIndex":2,"expl":"BH denotes bench height, the vertical dimension of the bench face shown in the diagram."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"What does \"SL\" stand for in the bench blast diagram?","options":["Subdrill length","Slope length","Stem height","Spacing length"],"correctIndex":2,"expl":"SL denotes stem height — the length of stemming material placed at the top of the blasthole."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"The \"free face\" in a bench blast refers to what?","options":["The area behind the last row of holes","The bottom of the blasthole","The top surface where drilling begins","The exposed vertical rock surface toward which the blast displaces material"],"correctIndex":3,"expl":"The free face is the open surface of the bench providing room for rock breakage and displacement."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"What is \"backbreak\" in bench blast design?","options":["Rock breakage that extends behind the planned crest/last row of holes","The uncharged portion of a blasthole","The distance between the toe and crest","The angle of the bench face"],"correctIndex":0,"expl":"Backbreak is breakage extending past the intended blast boundary toward the new crest area, as shown in the diagram."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"What does \"toe burden\" refer to?","options":["The burden distance measured at the bottom (toe) of the blasthole","The distance between two adjacent holes in a row","The total hole length","The burden distance at the collar of the hole"],"correctIndex":0,"expl":"Toe burden is the burden measured at the toe of the hole, as distinct from burden measured near the crest."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"What is the \"face angle (FA)\" in a bench blast diagram?","options":["The angle of rock displacement after blasting","The angle of the stemming column","The angle between two adjacent blastholes","The angle of inclination of the bench face"],"correctIndex":3,"expl":"Face angle describes the slope/inclination of the bench face, shown between the toe and crest in the diagram."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"In the diagram, \"drilled spacing (S)\" is measured as what?","options":["The depth of subdrilling","The distance between rows of holes","The distance from a hole to the free face","The distance between two blastholes within the same row"],"correctIndex":3,"expl":"Spacing (S) is the distance between holes in the same row, distinct from burden (B), the distance between rows."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"What does the \"crest\" refer to in bench blast terminology?","options":["The bottom of the blasthole","The top edge of the bench face before blasting","The explosive column","The stemming material"],"correctIndex":1,"expl":"The crest is the upper edge of the original bench face, shown at the top of the free face in the diagram."},{"type":"mcq","section":"Bench Blast Geometry & Terminology","q":"What is represented by \"hole diameter (D)\" in the bench blast diagram?","options":["The diameter of the drilled blasthole","The diameter of the stemming particles","The diameter of the explosive cartridge only","The width of the free face"],"correctIndex":0,"expl":"D denotes the diameter of the drilled blasthole itself, a key controllable variable in blast design."},{"type":"tf","section":"Bench Blast Geometry & Terminology","q":"In the bench blast diagram, burden (B) is the distance between holes in the same row, while spacing (S) is the distance between rows.","answer":false,"expl":"It is the reverse: burden (B) is the distance between rows parallel to the free face, and spacing (S) is the distance between holes in the same row."},{"type":"tf","section":"Bench Blast Geometry & Terminology","q":"The \"new crest\" shown in the diagram forms after mucking (removal of blasted material).","answer":true,"expl":"The diagram labels a \"New Crest (After Mucking)\" that forms once fragmented rock has been removed."},{"type":"tf","section":"Bench Blast Geometry & Terminology","q":"Stem height (SL) refers to the length of the explosive column inside the blasthole.","answer":false,"expl":"Stem height refers to the inert stemming material at the top of the hole, not the explosive column, which is a separately labeled section."},{"type":"tf","section":"Bench Blast Geometry & Terminology","q":"The floor of the bench is located below the level of the subdrill zone.","answer":false,"expl":"The floor is at bench level; subdrilling extends below the floor, not the other way around."},{"type":"tf","section":"Bench Blast Geometry & Terminology","q":"Hole length in the bench blast diagram spans from the collar down through the subdrilled portion below the floor.","answer":true,"expl":"The diagram shows hole length (L) extending from the collar down through the subdrill (SD) below the floor."},{"type":"mcq","section":"Burden","q":"How is burden defined?","options":["The length of stemming material used","The distance between holes within the same row","The distance between rows of holes running parallel to the free vertical rock surface","The depth a hole is drilled below the bench floor"],"correctIndex":2,"expl":"Burden is defined as the distance between rows of holes parallel to the free face."},{"type":"mcq","section":"Burden","q":"What happens if the burden is excessively large?","options":["Gases escape violently causing flyrock","Spacing must be reduced to compensate","Only cracks develop with no separation or fragmentation, and energy is wasted as vibration","Stemming becomes unnecessary"],"correctIndex":2,"expl":"With excessive burden, no separation/fragmentation occurs, and detonation energy is instead absorbed as heavy vibration in the rock mass."},{"type":"mcq","section":"Burden","q":"What happens if the burden is too small?","options":["Gases escape toward the bench face at high velocity, causing dangerous flyrock","The rock mass only develops cracks with no fragmentation","Ground vibration increases with no other effect","Subdrilling becomes unnecessary"],"correctIndex":0,"expl":"A very small burden lets detonation gases escape rapidly toward the free face, violently throwing rock fragments and causing flyrock hazards."},{"type":"mcq","section":"Burden","q":"Empirical formulas typically give a burden value falling within what range in terms of hole diameter (D)?","options":["1×D to 5×D","5×D to 10×D","25×D to 40×D","50×D to 75×D"],"correctIndex":2,"expl":"The lecture states burden evaluated by common formulas lies somewhere between 25×D and 40×D."},{"type":"mcq","section":"Burden","q":"Among all blast design parameters, burden is described as having what characteristic?","options":["No effect on flyrock risk","The most flexible tolerance of all parameters","The least allowable error of all parameters","No relationship to hole diameter"],"correctIndex":2,"expl":"Burden has the least allowable error among all blast design parameters, reflecting its critical importance."},{"type":"mcq","section":"Burden","q":"What does the appropriate value of burden most depend upon, according to the lecture?","options":["The hardness of the rock mass","The number of free faces only","The time of day the blast occurs","The color of the explosive used"],"correctIndex":0,"expl":"The most appropriate burden value depends on rock mass hardness, in addition to other formula-based factors."},{"type":"mcq","section":"Burden","q":"Why is burden considered the most important parameter in blast design calculations?","options":["It has no effect on fragmentation","It is the cheapest parameter to control","All the rock mass contained within the burden must be fragmented by the blast's energy","It determines the color of the muck pile"],"correctIndex":2,"expl":"Burden is critical because the entire rock volume within it must be broken by the energy released in the detonation."},{"type":"mcq","section":"Burden","q":"Why have many empirical burden formulas been developed instead of a single mathematical derivation?","options":["Because burden varies only with hole diameter","Because a pure mathematical derivation of burden is impossible","Because burden has no relationship to rock properties","Because researchers disagree on outcome parameters"],"correctIndex":1,"expl":"Due to the impossibility of mathematical derivation, researchers developed empirical relations between burden and other blast parameters instead."},{"type":"mcq","section":"Burden","q":"If a mine uses a 200 mm diameter blasthole, what is the approximate empirical burden range (25D–40D)?","options":["5.0 m to 8.0 m","0.5 m to 0.8 m","2.5 m to 4.0 m","10 m to 16 m"],"correctIndex":0,"expl":"25×200mm = 5000mm = 5.0m and 40×200mm = 8000mm = 8.0m, giving the empirical range of 5.0–8.0 m."},{"type":"tf","section":"Burden","q":"If burden is too large, the main risk is flyrock caused by high-velocity gas escape.","answer":false,"expl":"Excessive burden causes cracking without fragmentation and wasted vibration energy — flyrock is the risk of too small a burden."},{"type":"tf","section":"Burden","q":"The most appropriate burden value depends on the hardness of the rock mass.","answer":true,"expl":"This is stated directly in the lecture."},{"type":"tf","section":"Burden","q":"Burden has more allowable error than any other blast design parameter.","answer":false,"expl":"The opposite is true — burden has the least allowable error of all the parameters."},{"type":"tf","section":"Burden","q":"Empirical burden formulas typically yield values between 25×D and 40×D, where D is blasthole diameter.","answer":true,"expl":"This range is explicitly stated in the lecture."},{"type":"tf","section":"Burden","q":"Burden is defined as the distance from a charge to the nearest free face, measured in the direction rock is most likely to be displaced.","answer":true,"expl":"This refined definition is given when discussing the KB ratio, consistent with the standard concept of burden."},{"type":"mcq","section":"Blasthole Spacing","q":"Spacing is typically calculated as what multiple of burden (B)?","options":["2.0×B to 3.0×B","0.1×B to 0.5×B","5×B to 10×B","1.1×B to 1.5×B"],"correctIndex":3,"expl":"Spacing values of 1.1×B to 1.5×B are chosen when drilling blastholes for a mine bench."},{"type":"mcq","section":"Blasthole Spacing","q":"Which spacing ratio is generally more appropriate for large diameter blastholes?","options":["2.0×B","1.1×B","0.5×B","1.5×B"],"correctIndex":1,"expl":"Within the 1.1B–1.5B range, 1.1×B is more appropriate for large diameter holes, while 1.5×B suits small diameter holes."},{"type":"mcq","section":"Blasthole Spacing","q":"What is the minimum spacing value that should generally be used, except in controlled blasting techniques?","options":["1.5×B","0.5×B","2.0×B","1.0×B"],"correctIndex":3,"expl":"Spacing values less than 1.0×B should never be used except for controlled blasting techniques like smooth or cushion blasting."},{"type":"mcq","section":"Blasthole Spacing","q":"What happens when blastholes in a row are very closely spaced?","options":["Humps form on the newly created bench face","Ground vibration disappears entirely","Cracks progress rapidly between holes, forming large craters and stumps at the previous bench toe","Fragmentation decreases significantly"],"correctIndex":2,"expl":"Very close spacing causes rapid crack propagation between holes and large craters at hole bottoms, producing stumps at the toe of the previous bench."},{"type":"mcq","section":"Blasthole Spacing","q":"What happens when blastholes in a row have too large a spacing?","options":["Flyrock risk disappears completely","Humps form on the new bench face and stumps increase at the previous bench toe","Craters form excessively at hole bottoms","Cracks propagate too rapidly between adjacent holes"],"correctIndex":1,"expl":"Large spacing increases the chance of humps forming on the newly created bench face, along with stumps at the toe."},{"type":"mcq","section":"Blasthole Spacing","q":"What primarily affects the determination of the spacing-to-burden ratio?","options":["The number of free faces available","The time of year the blast is conducted","The color of the explosive","Geological conditions of the rock mass"],"correctIndex":3,"expl":"Geological conditions greatly affect the determination of the spacing-to-burden ratio."},{"type":"mcq","section":"Blasthole Spacing","q":"Besides using calculated formulas, how is the value of spacing often finally determined in practice?","options":["Through onsite experience","By using a fixed universal constant","By ignoring burden entirely","By using only the smallest theoretical value"],"correctIndex":0,"expl":"Spacing value is often arrived at after onsite experience, especially when holes in a row must be blasted at different instances."},{"type":"mcq","section":"Blasthole Spacing","q":"If burden is calculated as 4.0 m, what is the acceptable spacing range using the standard 1.1B–1.5B rule?","options":["0.4 m to 0.6 m","1.1 m to 1.5 m","4.4 m to 6.0 m","8.0 m to 12.0 m"],"correctIndex":2,"expl":"1.1×4.0=4.4m and 1.5×4.0=6.0m, giving the range 4.4–6.0m."},{"type":"tf","section":"Blasthole Spacing","q":"Spacing values less than 1.0×B are acceptable for normal production blasting.","answer":false,"expl":"Spacing below 1.0×B should never be used except in controlled blasting techniques like smooth or cushion blasting."},{"type":"tf","section":"Blasthole Spacing","q":"A spacing ratio of 1.5×B is generally more appropriate for small diameter blastholes.","answer":true,"expl":"1.5×B is more suitable for small diameter blastholes, while 1.1×B suits large diameter holes."},{"type":"tf","section":"Blasthole Spacing","q":"Excessively close hole spacing tends to produce humps on the newly formed bench face.","answer":false,"expl":"Close spacing tends to produce craters and stumps; humps are more associated with excessively wide spacing."},{"type":"tf","section":"Blasthole Spacing","q":"Spacing is usually calculated as a function of the already-determined burden value.","answer":true,"expl":"The lecture states spacing is usually calculated from the value of burden."},{"type":"mcq","section":"Subdrilling","q":"What is subdrilling?","options":["The length of blasthole drilled below the level of the bench floor","The angle of inclination of a blasthole","The distance between two adjacent blastholes","The length of stemming material at the top of a hole"],"correctIndex":0,"expl":"Subdrilling is defined as the length drilled below the bench floor level."},{"type":"mcq","section":"Subdrilling","q":"Why is subdrilling necessary in bench blasting?","options":["To reduce the total cost of drilling","To eliminate the need for stemming","To increase ground vibration for better fragmentation","To ensure the new floor is level with the original bench face and avoid stumps"],"correctIndex":3,"expl":"Subdrilling ensures that after blasting and removal of fragments, the new floor is level with no unfragmented stumps remaining."},{"type":"mcq","section":"Subdrilling","q":"From which end is a blasthole normally initiated?","options":["Simultaneously from both ends","The bottom","The top/collar","The middle of the charge column"],"correctIndex":1,"expl":"A blasthole is always initiated from its bottom, so the detonation zone travels upward."},{"type":"mcq","section":"Subdrilling","q":"Because detonation travels from the bottom of the hole upward, in what direction do compression waves travel relative to the hole?","options":["They do not propagate through the rock at all","At an upward angle, not perpendicular to the blasthole","Directly perpendicular to the blasthole","Straight downward only"],"correctIndex":1,"expl":"Since detonation starts at the bottom and moves upward, compression waves travel at an upward angle rather than perpendicular to the hole."},{"type":"mcq","section":"Subdrilling","q":"What happens if a blasthole is detonated from the bottom WITHOUT subdrilling?","options":["The hole cannot be detonated at all","Fragmentation improves near the collar","Excess subdrilling occurs automatically","A zone forms where compression waves do not reach and tension waves are not reflected, leaving unfragmented rock (stumps)"],"correctIndex":3,"expl":"Without subdrilling, a zone near the toe remains unfragmented because compression waves don't reach it and tension waves aren't reflected there, producing stumps."},{"type":"mcq","section":"Subdrilling","q":"What is one consequence of EXCESSIVE subdrilling length?","options":["Reduced ground vibration and lower costs","Increased drilling/blasting costs and increased ground vibration level","Complete elimination of overbreak risk","Better slope stability with no other effects"],"correctIndex":1,"expl":"Excessive subdrilling raises drilling and blasting costs, increases vibration levels, causes excessive bench fragmentation affecting slope stability, and increases cutoff/overbreak risk."},{"type":"mcq","section":"Subdrilling","q":"According to the recommended subdrilling table, what subdrilling length (in terms of burden B) is suggested for medium rock with normal toe in intact rock condition?","options":["0.1 B to 0.2 B","0.3 B","0.4 B to 0.5 B","0.07 B to 0.15 B"],"correctIndex":1,"expl":"The table specifies 0.3B for medium rock with normal toe in intact rock conditions."},{"type":"mcq","section":"Subdrilling","q":"For hard rock with difficult toe in intact rock conditions, what subdrilling length is recommended?","options":["0.1 B to 0.2 B","0.07 B to 0.15 B","0.3 B","0.4 B to 0.5 B"],"correctIndex":3,"expl":"The table gives 0.4B to 0.5B for hard rock with difficult toe in intact rock conditions."},{"type":"mcq","section":"Subdrilling","q":"By approximately how much can subdrilling length be reduced in highly fractured rock compared to intact rock?","options":["About 10%","About 25%","About 50%","About 75%"],"correctIndex":1,"expl":"Subdrilling length can be reduced by about 25% in highly fractured rock conditions."},{"type":"tf","section":"Subdrilling","q":"The optimum length of subdrilling depends upon the strength of the rock.","answer":true,"expl":"This is stated directly in the lecture regarding recommended subdrilling length."},{"type":"tf","section":"Subdrilling","q":"In cases where rock is highly fractured, subdrilling length should be increased compared to intact rock.","answer":false,"expl":"In highly fractured rock, subdrilling length can be reduced (by about 25%), not increased."},{"type":"tf","section":"Subdrilling","q":"A blasthole without adequate subdrilling will leave a fully fragmented floor with no stumps.","answer":false,"expl":"Without subdrilling, an unfragmented zone (stumps) remains at the toe because compression waves don't reach that region."},{"type":"tf","section":"Subdrilling","q":"Excessive subdrilling can affect slope stability due to excessive fragmentation of the bench.","answer":true,"expl":"This is one of the listed negative consequences of too-large subdrilling length."},{"type":"tf","section":"Subdrilling","q":"For soft rock with easy toe in intact conditions, the recommended subdrilling is greater than for hard rock with difficult toe.","answer":false,"expl":"Soft rock with easy toe recommends 0.1B–0.2B, which is smaller than the 0.4B–0.5B recommended for hard rock with difficult toe."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"What is stemming?","options":["The explosive charge placed at the collar","Filling part of the blasthole with inert material (like rock chips) to confine detonation gases","The angle of inclination of the hole","The process of drilling below bench floor level"],"correctIndex":1,"expl":"Stemming is intentionally filling part of the hole (usually near the top) with inert material to confine gases and use blast energy effectively."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"What happens if stemming length is too small?","options":["Ground vibration decreases significantly","Premature gas escape occurs, leading to airblast and flyrock danger","Large boulders form near the bench top","Rock near the collar becomes overcompacted"],"correctIndex":1,"expl":"Too little stemming allows gases to escape prematurely, causing airblast and flyrock hazards."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"What happens if stemming length is excessively long?","options":["Subdrilling becomes unnecessary","The rock near the bench top isn't sufficiently cracked, producing large boulders and reduced loosening","Airblast becomes severe","Flyrock risk increases dramatically"],"correctIndex":1,"expl":"Excessive stemming leaves insufficient cracking near the collar, resulting in large boulders and reduced rock loosening, making removal more difficult."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"What is considered the most effective material for stemming?","options":["Water-saturated clay","Smooth rounded gravel","Fine sand","Coarse angular material, such as crushed rock"],"correctIndex":3,"expl":"Studies cited in the lecture show coarse angular crushed rock is the most effective stemming material."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"What is the optimal stemming length range, expressed as a multiple of hole diameter (D)?","options":["1×D to 5×D","40×D to 60×D","60×D to 80×D","18×D to 30×D"],"correctIndex":3,"expl":"The optimal stemming length varies between 18D and 30D."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"What particle size range of crushed rock is found most suitable as stemming material (relative to hole diameter D)?","options":["0.04×D to 0.06×D","0.5×D to 0.8×D","0.001×D to 0.002×D","1.0×D to 1.5×D"],"correctIndex":0,"expl":"Crushed rock sized between 0.04D and 0.06D is most suitable for stemming."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"What advantage do small diameter blastholes offer regarding explosive energy?","options":["Lower drilling costs than large diameter holes","Greater productivity than large diameter holes","Higher shock energy than large diameter holes","Better distribution of explosive energy, requiring lower powder factors"],"correctIndex":3,"expl":"Small diameter holes provide better explosive energy distribution and require lower powder factors, though drilling costs are higher."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"What is a disadvantage of larger hole diameters?","options":["They always increase drilling costs significantly","They reduce productivity substantially","They require higher powder factors and may cause boulders at the collar due to higher stemming","They give unreliable explosive detonation"],"correctIndex":2,"expl":"Larger diameter holes require higher powder factors and can create boulders at the collar because stemming is usually longer, despite giving reliable detonation and lower costs."},{"type":"mcq","section":"Stemming & Hole Diameter","q":"For a 200 mm diameter blasthole, what is the optimal stemming length range (18D–30D)?","options":["3.6 m to 6.0 m","0.36 m to 0.6 m","7.2 m to 12.0 m","1.8 m to 3.0 m"],"correctIndex":0,"expl":"18×200mm=3600mm=3.6m and 30×200mm=6000mm=6.0m, giving a range of 3.6–6.0m."},{"type":"tf","section":"Stemming & Hole Diameter","q":"If stemming length is too short, the main risk is large boulders forming near the collar.","answer":false,"expl":"Too-short stemming causes premature gas escape leading to airblast and flyrock, not boulders — boulders occur with excessive stemming."},{"type":"tf","section":"Stemming & Hole Diameter","q":"Coarse angular crushed rock is more effective as stemming material than fine or rounded material.","answer":true,"expl":"Studies cited show coarse angular crushed rock is the most effective stemming material."},{"type":"tf","section":"Stemming & Hole Diameter","q":"Small diameter blastholes are generally good for use in highly jointed rock.","answer":true,"expl":"Small diameter holes are noted as good in highly jointed rock conditions."},{"type":"tf","section":"Stemming & Hole Diameter","q":"Larger hole diameters always require lower powder factors than small diameter holes.","answer":false,"expl":"The opposite is true — larger diameter holes require higher powder factors, while small diameter holes require lower powder factors."},{"type":"mcq","section":"Burden Calculation Formulas","q":"In the Fraenkel (1952) burden formula B=(Rv×L^0.3×I^0.3×D^0.8)/50, what does \"I\" represent?","options":["Length of charge in meters","Length of blasthole in meters","Resistance factor","Diameter of blasthole in millimeters"],"correctIndex":0,"expl":"In Fraenkel's formula, I is the length of the explosive charge in meters, distinct from L (blasthole length) and D (diameter)."},{"type":"mcq","section":"Burden Calculation Formulas","q":"In the Fraenkel (1952) formula, what value of the resistance factor Rv is used for rock with HIGH unconfined compressive strength (UCS)?","options":["1.5","5","6","1.0"],"correctIndex":0,"expl":"Rv is 1.5 for high-UCS rock and 5 for low-UCS rock, within the overall Rv range of 1 to 6."},{"type":"mcq","section":"Burden Calculation Formulas","q":"What does \"PD\" represent in the Pearse (1955) and Hino (1959) burden formulas?","options":["Peak displacement in mm","Particle diameter in mm","Detonation pressure in kg/cm²","Powder density in g/cm³"],"correctIndex":2,"expl":"PD stands for detonation pressure, measured in kg/cm², used alongside rock tensile strength (RT) in these formulas."},{"type":"mcq","section":"Burden Calculation Formulas","q":"In the Pearse (1955) formula B = Kv × 10⁻³ × D × (PD/RT)^0.5, what range does the rock property constant Kv fall between?","options":["18 to 30","1.0 to 6.0","0.04 to 0.06","0.7 to 1.0"],"correctIndex":3,"expl":"The Pearse formula's rock property constant Kv ranges between 0.7 and 1.0."},{"type":"mcq","section":"Burden Calculation Formulas","q":"In the Hino (1959) burden formula, how is the exponent \"n\" determined?","options":["It is calculated directly from hole diameter","From data obtained in a crater-forming test for the explosive","It equals the rock's specific gravity","It is always fixed at 1.5"],"correctIndex":1,"expl":"n is determined from crater-forming test data for the explosive being used."},{"type":"mcq","section":"Burden Calculation Formulas","q":"In the Lopez Jemino (1980) formula B = 0.76 × D × F, what unit is D expressed in?","options":["Millimeters","Centimeters","Feet","Inches"],"correctIndex":3,"expl":"For the Lopez Jemino formula, blasthole diameter D is expressed in inches."},{"type":"mcq","section":"Burden Calculation Formulas","q":"The Lopez Jemino (1980) burden formula is valid for what range of blasthole diameters?","options":["50 mm to 100 mm","10 mm to 50 mm","300 mm to 500 mm","165 mm to 250 mm"],"correctIndex":3,"expl":"The formula is valid for blastholes with diameters from 165mm to 250mm."},{"type":"mcq","section":"Burden Calculation Formulas","q":"According to Lopez Jemino (1980), what adjustment should be made when the blasthole diameter is larger than the valid range?","options":["No adjustment is needed","Increase burden by a factor of 1.5","Reduce the burden by a correction factor of 0.9","Double the calculated burden value"],"correctIndex":2,"expl":"For larger diameters, the burden should be reduced by a correction factor of 0.9."},{"type":"mcq","section":"Burden Calculation Formulas","q":"In the Konya and Walters (1972) formula B = 3.15 × D × (ρe/ρr)^0.333, what does ρr represent?","options":["Specific gravity of the explosive","Specific gravity of the rock","Velocity of detonation","Resistance factor"],"correctIndex":1,"expl":"ρr denotes the specific gravity of rock, while ρe denotes specific gravity of the explosive, both in g/cc."},{"type":"mcq","section":"Burden Calculation Formulas","q":"In the Konya and Walters (1972) formula, what units are used for burden (B) and diameter (D)?","options":["B in meters, D in millimeters","B in meters, D in inches","B in feet, D in inches","B in feet, D in millimeters"],"correctIndex":2,"expl":"The Konya and Walters formula gives burden in feet with explosive diameter measured in inches."},{"type":"mcq","section":"Burden Calculation Formulas","q":"Using Konya and Walters (1972), if D = 6 inches, ρe = 1.2 g/cc, and ρr = 2.7 g/cc, what is the calculated burden B in feet? (ρe/ρr = 0.444, and 0.444^0.333 ≈ 0.763)","options":["≈ 14.4 ft","≈ 6.0 ft","≈ 8.2 ft","≈ 20.5 ft"],"correctIndex":0,"expl":"B = 3.15 × 6 × 0.763 ≈ 14.42 ft, using the given cube-root approximation."},{"type":"mcq","section":"Burden Calculation Formulas","q":"Using the Konya and Walters 1983 revision, B = ((2ρe/ρr) + 1.5) × D, what is the burden if ρe=1.2, ρr=2.7, and D=6 inches?","options":["≈ 14.33 ft","≈ 20.0 ft","≈ 12.0 ft","≈ 9.0 ft"],"correctIndex":0,"expl":"(2×1.2/2.7)+1.5 = 0.889+1.5 = 2.389; ×6 = 14.33 ft."},{"type":"tf","section":"Burden Calculation Formulas","q":"The Fraenkel (1952) formula uses a resistance factor Rv that ranges between 1 and 6.","answer":true,"expl":"This range is stated directly in the lecture."},{"type":"tf","section":"Burden Calculation Formulas","q":"The Pearse (1955) formula requires knowledge of detonation pressure and rock tensile strength.","answer":true,"expl":"The formula uses PD (detonation pressure) and RT (tensile strength of rock) as inputs."},{"type":"tf","section":"Burden Calculation Formulas","q":"The Hino (1959) formula's exponent n is a universal constant that never changes between explosives.","answer":false,"expl":"n must be determined from crater-forming test data specific to the explosive used, so it varies."},{"type":"tf","section":"Burden Calculation Formulas","q":"The Lopez Jemino (1980) formula is valid for any blasthole diameter without restriction.","answer":false,"expl":"It is explicitly valid only for diameters between 165mm and 250mm, with a correction needed outside this range."},{"type":"tf","section":"Burden Calculation Formulas","q":"In the Konya and Walters formulas, using a denser explosive relative to the rock (higher ρe/ρr) results in a larger calculated burden.","answer":true,"expl":"Since burden increases with (ρe/ρr) in these formulas, a higher explosive-to-rock density ratio produces a larger burden."},{"type":"tf","section":"Burden Calculation Formulas","q":"According to Konya and Walters (1983), the stemming distance T is recommended as 0.7 times the burden (T = 0.7B).","answer":true,"expl":"The 1983 revision states stemming distance T = 0.7B and subdrilling distance J = 0.3B."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"In the Ash (1963) relationship set, what does the equation B = KB × De represent?","options":["Burden calculated from the blasthole diameter using a burden-to-diameter ratio","Spacing calculated from burden","Bench height calculated from hole length","Subdrilling calculated from burden"],"correctIndex":0,"expl":"KB is defined as the burden-to-blasthole-diameter ratio, used to calculate burden directly from explosive diameter."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"According to Ash's relationships, how is charge length (C) calculated?","options":["C = Hole length (H) − Subdrill length (J)","C = Burden (B) × Spacing (S)","C = Hole length (H) − Stemming length (T)","C = Hole length (H) + Subdrill length (J)"],"correctIndex":2,"expl":"Charge length equals hole length minus the stemming (uncharged collar) length."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"According to Ash's relationships, how is bench height (L) calculated?","options":["L = Hole length (H) × Subdrill ratio (KJ)","L = Hole length (H) − Subdrill length (J)","L = Hole length (H) − Stemming length (T)","L = Burden (B) + Spacing (S)"],"correctIndex":1,"expl":"Bench height equals hole length minus the subdrill portion below the floor."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"Using ANFO (SG 0.82) in medium rock (SG 2.7), what KB value is recommended by the guideline table?","options":["25","28","30","23"],"correctIndex":0,"expl":"The ANFO guideline table gives KB = 25 for medium rock (SG 2.7)."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"Using slurry/emulsion explosive (density 1.20) in dense rock (SG 3.2), what KB value is recommended?","options":["23","33","30","27"],"correctIndex":3,"expl":"The slurry/emulsion guideline table gives KB = 27 for dense rock (SG 3.2)."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"For a staggered drilling pattern, what KS (spacing-to-burden ratio) value provides the best energy coverage?","options":["0.5","2.0","1.8","1.15"],"correctIndex":3,"expl":"A staggered pattern achieves the best energy coverage at KS = 1.15."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"What KS range is recommended when blastholes are shot instantly by row?","options":["0.5 to 1.0","1.2 to 1.5","1.5 to 1.8","1.8 to 2.0"],"correctIndex":3,"expl":"The guideline table gives KS = 1.8 to 2.0 for holes shot instantly by row."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"What is the most common value used for KJ (subdrilling-to-burden ratio)?","options":["0.3","2.6","0.7","1.0"],"correctIndex":0,"expl":"The most common KJ value is 0.3."},{"type":"mcq","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"What is the minimum recommended KT (collar/stemming-to-burden ratio) for large-hole production blasting, and what is the typical KH (hole length-to-burden ratio)?","options":["KT minimum = 0.3; typical KH = 1.15","KT minimum = 2.0; typical KH = 4.0","KT minimum = 0.7; typical KH = 2.6","KT minimum = 1.5; typical KH = 0.3"],"correctIndex":2,"expl":"KT minimum recommended is 0.7 (some suggest 1.0), and typical KH values fall around 2.6 within a range of 1.5–4.0."},{"type":"tf","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"KB is defined as the burden-to-blasthole-diameter ratio.","answer":true,"expl":"This matches the definition given for the Ash (1963) relationship set."},{"type":"tf","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"Empirically, there is little difference in energy coverage between KS = 1.0 and KS = 1.5.","answer":true,"expl":"The lecture states this directly when discussing the KS ratio."},{"type":"tf","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"A KH value greater than 4.0 typically results in substantial cratering.","answer":false,"expl":"The opposite is true — too SMALL a KH value causes substantial cratering, while values greater than 4.0 may cause underbreak or bootlegging."},{"type":"tf","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"Excessive subdrilling (high KJ) increases the chance of cutoffs and overbreak.","answer":true,"expl":"Increased chances of cutoffs (misfires) and overbreak are listed as consequences of excessive subdrilling."},{"type":"tf","section":"Blasthole Parameter Ratios (KB, KS, KJ, KT, KH)","q":"A KT value of less than 1 in solid rock can cause cratering, backbreak, and possible violence, especially with collar priming.","answer":true,"expl":"This is stated directly in the discussion of the KT ratio."},{"type":"mcq","section":"Worked Calculations & Other Computations","q":"The rock volume per blasthole (VH) is calculated using which formula?","options":["VH = KB × KS × KH","VH = B × S × L (burden × spacing × bench height)","VH = B × D × L","VH = B × S × H (burden × spacing × hole length)"],"correctIndex":1,"expl":"VH is calculated as burden times spacing times bench height, giving the rock volume broken by a single blasthole."},{"type":"mcq","section":"Worked Calculations & Other Computations","q":"How is powder factor calculated?","options":["Burden × spacing ÷ hole diameter","Total blasted tonnes ÷ number of blastholes","Total quantity of explosives (kg) ÷ total volume of blasted rock (m³)","Total volume of blasted rock (m³) ÷ total quantity of explosives (kg)"],"correctIndex":2,"expl":"Powder factor is defined as the mass of explosive used per unit volume of rock blasted."},{"type":"mcq","section":"Worked Calculations & Other Computations","q":"In the worked example setup, hole diameter is 165mm, explosive type is emulsion (density 1.20 g/cm³), pattern is staggered, and rock specific gravity is 2.7. Using the slurry/emulsion KB guideline table, what KB value applies (medium rock)?","options":["30","25","33","27"],"correctIndex":0,"expl":"For slurry/emulsion (density 1.20) in medium rock (SG 2.7), the guideline table gives KB = 30."},{"type":"mcq","section":"Worked Calculations & Other Computations","q":"Using KB = 30 and De = 165mm for the worked example, what is the calculated burden (B = KB × De)?","options":["3.30 m","4.13 m","4.95 m","5.61 m"],"correctIndex":2,"expl":"B = 30 × 165mm = 4950mm = 4.95 m."},{"type":"mcq","section":"Worked Calculations & Other Computations","q":"With a staggered pattern (KS = 1.15) and burden B = 4.95 m, what is the calculated spacing (S = KS × B)?","options":["≈ 6.44 m","≈ 5.69 m","≈ 8.91 m","≈ 4.95 m"],"correctIndex":1,"expl":"S = 1.15 × 4.95 ≈ 5.69 m."},{"type":"mcq","section":"Worked Calculations & Other Computations","q":"Using typical KH = 2.6 and burden B = 4.95 m, what is the calculated hole length (H = KH × B)?","options":["≈ 9.90 m","≈ 12.87 m","≈ 15.44 m","≈ 6.44 m"],"correctIndex":1,"expl":"H = 2.6 × 4.95 ≈ 12.87 m."},{"type":"tf","section":"Worked Calculations & Other Computations","q":"Total blasted tonnes are calculated by multiplying total blasted volume (VT) by the density of the rock.","answer":true,"expl":"Blasted tonnes (T) = VT × density of rock in t/m³."},{"type":"tf","section":"Worked Calculations & Other Computations","q":"Total blasted volume (VT) is calculated by dividing rock volume per blasthole (VH) by the number of blastholes.","answer":false,"expl":"VT is calculated by MULTIPLYING VH by the number of blastholes, not dividing."}];
+const STORAGE_KEY = 'filmtrap_surfaceblast_quiz_v1';
+
+let state = {}; // { [index]: { answered: bool, selected: int|bool, correct: bool } }
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ state = JSON.parse(raw); }
+  }catch(e){ console.warn('Could not load saved progress', e); state = {}; }
+}
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){ console.warn('Could not save progress', e); }
+}
+
+function buildSections(){
+  const order = [];
+  const map = {};
+  QUIZ_DATA.forEach((q, i) => {
+    if(!map[q.section]){ map[q.section] = []; order.push(q.section); }
+    map[q.section].push(i);
+  });
+  return order.map(name => ({ name, indices: map[name] }));
+}
+
+function letterOf(i){ return ['A','B','C','D'][i]; }
+
+function renderCard(q, idx){
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.idx = idx;
+  card.dataset.type = q.type;
+
+  const meta = document.createElement('div');
+  meta.className = 'q-meta';
+  meta.innerHTML = `<span class="q-num">Q${idx+1}</span><span class="q-type-badge ${q.type}">${q.type === 'mcq' ? 'MCQ' : 'True / False'}</span>`;
+  card.appendChild(meta);
+
+  const qText = document.createElement('div');
+  qText.className = 'q-text';
+  qText.textContent = q.q;
+  card.appendChild(qText);
+
+  if(q.type === 'mcq'){
+    const opts = document.createElement('div');
+    opts.className = 'options';
+    q.options.forEach((optText, oi) => {
+      const opt = document.createElement('div');
+      opt.className = 'opt';
+      opt.dataset.oi = oi;
+      opt.innerHTML = `<span class="opt-letter">${letterOf(oi)}</span><span>${optText}</span>`;
+      opt.addEventListener('click', () => answerMCQ(idx, oi));
+      opts.appendChild(opt);
+    });
+    card.appendChild(opts);
+  } else {
+    const row = document.createElement('div');
+    row.className = 'tf-row';
+    const trueBtn = document.createElement('div');
+    trueBtn.className = 'tf-btn';
+    trueBtn.dataset.val = 'true';
+    trueBtn.textContent = 'TRUE';
+    trueBtn.addEventListener('click', () => answerTF(idx, true));
+    const falseBtn = document.createElement('div');
+    falseBtn.className = 'tf-btn';
+    falseBtn.dataset.val = 'false';
+    falseBtn.textContent = 'FALSE';
+    falseBtn.addEventListener('click', () => answerTF(idx, false));
+    row.appendChild(trueBtn);
+    row.appendChild(falseBtn);
+    card.appendChild(row);
+  }
+
+  const explain = document.createElement('div');
+  explain.className = 'explain';
+  explain.innerHTML = `<b>Explanation</b>${q.expl}`;
+  card.appendChild(explain);
+
+  const saved = state[idx];
+  if(saved && saved.answered){
+    applyLockedUI(card, q, saved);
+  }
+
+  return card;
+}
+
+function applyLockedUI(card, q, saved){
+  card.classList.add('locked');
+  card.classList.add(saved.correct ? 'correct-answer' : 'wrong-answer');
+
+  if(q.type === 'mcq'){
+    const opts = card.querySelectorAll('.opt');
+    opts.forEach(opt => {
+      const oi = parseInt(opt.dataset.oi, 10);
+      if(oi === saved.selected && oi === q.correctIndex){
+        opt.classList.add('chosen-correct');
+      } else if(oi === saved.selected && oi !== q.correctIndex){
+        opt.classList.add('chosen-wrong');
+      } else if(oi === q.correctIndex){
+        opt.classList.add('reveal-correct');
+      }
+    });
+  } else {
+    const btns = card.querySelectorAll('.tf-btn');
+    btns.forEach(btn => {
+      const val = btn.dataset.val === 'true';
+      if(val === saved.selected && val === q.answer){
+        btn.classList.add('chosen-correct');
+      } else if(val === saved.selected && val !== q.answer){
+        btn.classList.add('chosen-wrong');
+      } else if(val === q.answer){
+        btn.classList.add('reveal-correct');
+      }
+    });
+  }
+}
+
+function answerMCQ(idx, oi){
+  if(state[idx] && state[idx].answered) return;
+  const q = QUIZ_DATA[idx];
+  const correct = oi === q.correctIndex;
+  state[idx] = { answered: true, selected: oi, correct };
+  saveState();
+  const card = document.querySelector(`.card[data-idx="${idx}"]`);
+  applyLockedUI(card, q, state[idx]);
+  updateScoreboard();
+}
+
+function answerTF(idx, val){
+  if(state[idx] && state[idx].answered) return;
+  const q = QUIZ_DATA[idx];
+  const correct = val === q.answer;
+  state[idx] = { answered: true, selected: val, correct };
+  saveState();
+  const card = document.querySelector(`.card[data-idx="${idx}"]`);
+  applyLockedUI(card, q, state[idx]);
+  updateScoreboard();
+}
+
+function updateScoreboard(){
+  let correct = 0, wrong = 0, answered = 0;
+  Object.values(state).forEach(s => {
+    if(s && s.answered){
+      answered++;
+      if(s.correct) correct++; else wrong++;
+    }
+  });
+  document.getElementById('sb-correct').textContent = correct;
+  document.getElementById('sb-wrong').textContent = wrong;
+  document.getElementById('sb-answered').textContent = answered;
+  document.getElementById('sb-total').textContent = QUIZ_DATA.length;
+  const pct = QUIZ_DATA.length ? (answered / QUIZ_DATA.length) * 100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function applyFilter(filter){
+  document.querySelectorAll('.card').forEach(card => {
+    const type = card.dataset.type;
+    const show = filter === 'all' || type === filter;
+    card.classList.toggle('filtered-out', !show);
+  });
+  document.querySelectorAll('.section').forEach(sec => {
+    const visibleCards = sec.querySelectorAll('.card:not(.filtered-out)');
+    sec.style.display = visibleCards.length ? '' : 'none';
+  });
+}
+
+function init(){
+  loadState();
+  const root = document.getElementById('quiz-root');
+  const sections = buildSections();
+
+  const mcqCount = QUIZ_DATA.filter(q => q.type === 'mcq').length;
+  const tfCount = QUIZ_DATA.filter(q => q.type === 'tf').length;
+  document.getElementById('count-all').textContent = `(${QUIZ_DATA.length})`;
+  document.getElementById('count-mcq').textContent = `(${mcqCount})`;
+  document.getElementById('count-tf').textContent = `(${tfCount})`;
+
+  sections.forEach(sec => {
+    const secEl = document.createElement('div');
+    secEl.className = 'section';
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.innerHTML = `<span>${sec.name}</span><span class="section-count">${sec.indices.length} questions</span>`;
+    secEl.appendChild(label);
+    sec.indices.forEach(idx => {
+      secEl.appendChild(renderCard(QUIZ_DATA[idx], idx));
+    });
+    root.appendChild(secEl);
+  });
+
+  updateScoreboard();
+
+  document.querySelectorAll('.pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      applyFilter(pill.dataset.filter);
+    });
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    const ok = confirm('Reset all progress? This will clear every answered question and cannot be undone.');
+    if(!ok) return;
+    state = {};
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){ console.warn(e); }
+    root.innerHTML = '';
+    init();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
